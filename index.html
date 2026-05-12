@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodePoet - 代码写诗生成器</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖋️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-primary: #1a1a2e;
+      --color-secondary: #16213e;
+      --color-accent-red: #e94560;
+      --color-indigo: #0f3460;
+      --color-terminal-green: #00ff41;
+      --color-text-light: #eaeaea;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+      color: var(--color-text-light);
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; position: relative; }
+    .bg-blob, .bg-blob-2 {
+      position: fixed; width: 24rem; height: 24rem; border-radius: 50%;
+      filter: blur(6rem); opacity: 0.2; animation: pulse 4s ease-in-out infinite; pointer-events: none;
+    }
+    .bg-blob { top: 25%; left: 25%; background: var(--color-accent-red); }
+    .bg-blob-2 { bottom: 25%; right: 25%; background: #4f46e5; animation-delay: 2s; }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.2; }
+      50% { transform: scale(1.1); opacity: 0.3; }
+    }
+    header { text-align: center; margin-bottom: 3rem; position: relative; z-index: 10; }
+    h1 { font-size: 3.5rem; font-weight: 900; margin-bottom: 1rem; background: linear-gradient(to right, var(--color-accent-red), #a855f7, #4f46e5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .subtitle { font-size: 1.25rem; color: #9ca3af; max-width: 36rem; margin: 0 auto 1rem; }
+    .tags { display: flex; justify-content: center; gap: 1rem; margin-top: 1rem; }
+    .tag { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; }
+    .tag-red { background: rgba(233, 69, 96, 0.2); color: var(--color-accent-red); }
+    .tag-purple { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+    .tag-indigo { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+    .panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border-radius: 0.75rem; padding: 1.5rem; border: 1px solid rgba(31, 41, 55, 1); }
+    .style-section { margin-bottom: 1.5rem; }
+    .section-title { display: flex; align-items: center; gap: 0.5rem; font-size: 1.125rem; font-weight: bold; color: #d1d5db; margin-bottom: 1rem; }
+    .style-category { margin-bottom: 1rem; }
+    .category-label { font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem; }
+    .style-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+    @media (max-width: 768px) { .style-grid { grid-template-columns: repeat(2, 1fr); } }
+    .style-btn { padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; border: none; cursor: pointer; transition: all 0.2s; background: #1f2937; color: #d1d5db; }
+    .style-btn:hover { background: #374151; color: white; }
+    .style-btn.active { background: linear-gradient(to right, #a855f7, #ec4899); color: white; font-weight: 500; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4); }
+    .style-preview { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #374151; }
+    .style-preview-label { font-size: 0.75rem; color: #6b7280; margin-bottom: 0.5rem; }
+    .style-preview-content { padding: 0.75rem; background: linear-gradient(to right, #fef3c7, #fde68a); border-radius: 0.5rem; border: 1px solid #fbbf24; }
+    .style-preview-content p { font-size: 0.875rem; color: #374151; font-style: italic; font-family: 'Noto Serif SC', serif; }
+    .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+    @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+    .code-panel { display: flex; flex-direction: column; height: 100%; }
+    .code-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .code-title { font-size: 1.25rem; font-weight: bold; color: var(--color-terminal-green); }
+    .char-count { font-size: 0.875rem; color: #6b7280; }
+    .code-input-wrapper { flex: 1; position: relative; }
+    textarea { width: 100%; height: 200px; background: black; border: 2px solid var(--color-terminal-green); border-radius: 0.5rem; padding: 1rem; color: var(--color-terminal-green); font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.875rem; resize: none; outline: none; transition: box-shadow 0.2s; }
+    textarea::placeholder { color: #4b5563; }
+    textarea:focus { box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.3); }
+    .clear-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.75rem; background: var(--color-terminal-green); color: black; border: none; border-radius: 0.25rem; font-size: 0.75rem; cursor: pointer; transition: background 0.2s; }
+    .clear-btn:hover { background: #4ade80; }
+    .generate-btn { width: 100%; margin-top: 1rem; padding: 0.75rem; background: var(--color-accent-red); color: white; font-weight: bold; border: none; border-radius: 0.5rem; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
+    .generate-btn:hover:not(:disabled) { background: #dc2626; transform: scale(1.02); }
+    .generate-btn:active:not(:disabled) { transform: scale(0.98); }
+    .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .poetry-panel { display: flex; flex-direction: column; height: 100%; }
+    .generating-state { display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 280px; }
+    .generating-state.visible { display: flex; }
+    .generating-icon { font-size: 4rem; margin-bottom: 1rem; animation: bounce 1s infinite; }
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    .generating-text { font-size: 1.25rem; color: #9ca3af; }
+    .loading-dots { display: flex; gap: 0.25rem; margin-top: 0.5rem; }
+    .loading-dot { width: 0.5rem; height: 0.5rem; background: var(--color-accent-red); border-radius: 50%; animation: bounce 1s infinite; }
+    .loading-dot:nth-child(2) { animation-delay: 0.15s; }
+    .loading-dot:nth-child(3) { animation-delay: 0.3s; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 280px; color: #4b5563; }
+    .empty-state.hidden { display: none; }
+    .empty-icon { font-size: 4rem; opacity: 0.3; margin-bottom: 1rem; }
+    .empty-text { font-size: 1.125rem; }
+    .empty-hint { font-size: 0.875rem; margin-top: 0.5rem; }
+    .poetry-content { display: none; flex-direction: column; height: 100%; }
+    .poetry-content.visible { display: flex; }
+    .poetry-header { text-align: center; margin-bottom: 1rem; }
+    .poetry-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; background: linear-gradient(to right, #4f46e5, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-family: 'Noto Serif SC', serif; }
+    .poetry-style-tag { display: inline-block; padding: 0.25rem 0.75rem; background: #4f46e5; color: white; font-size: 0.75rem; border-radius: 9999px; }
+    .analysis-section { margin-bottom: 0.75rem; }
+    .analysis-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #9ca3af; margin-bottom: 0.5rem; }
+    .tag-pill { display: inline-block; padding: 0.25rem 0.75rem; font-size: 0.75rem; border-radius: 9999px; margin-right: 0.25rem; margin-bottom: 0.25rem; }
+    .tag-algo { background: linear-gradient(to right, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2)); border: 1px solid rgba(168, 85, 247, 0.3); color: #d8b4fe; }
+    .tag-style { background: linear-gradient(to right, rgba(59, 130, 246, 0.2), rgba(6, 182, 212, 0.2)); border: 1px solid rgba(59, 130, 246, 0.3); color: #93c5fd; }
+    .personality-box { padding: 0.5rem; background: linear-gradient(to right, rgba(245, 158, 11, 0.1), rgba(249, 115, 22, 0.1)); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 0.5rem; margin-top: 0.5rem; }
+    .personality-text { font-size: 0.875rem; color: #fcd34d; }
+    .poem-display { flex: 1; background: linear-gradient(to bottom right, #fef3c7, #fde68a); border-radius: 0.5rem; padding: 1.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); position: relative; overflow: hidden; }
+    .poem-bg-1, .poem-bg-2 { position: absolute; border-radius: 50%; opacity: 0.2; }
+    .poem-bg-1 { top: 0; left: 0; width: 8rem; height: 8rem; background: linear-gradient(to bottom right, #fde68a, transparent); }
+    .poem-bg-2 { bottom: 0; right: 0; width: 10rem; height: 10rem; background: linear-gradient(to top left, #fde68a, transparent); }
+    .poem-lines { position: relative; z-index: 1; }
+    .poem-line { font-size: 1.25rem; line-height: 1.75; color: #1f2937; font-family: 'Noto Serif SC', 'Songti SC', 'SimSun', serif; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); opacity: 0; transition: opacity 0.6s ease-in-out; }
+    .poem-line.visible { opacity: 1; }
+    .copy-btn { position: absolute; bottom: 1rem; right: 1rem; padding: 0.25rem 0.75rem; background: #4f46e5; color: white; border: none; border-radius: 0.25rem; font-size: 0.75rem; cursor: pointer; transition: background 0.2s; z-index: 2; }
+    .copy-btn:hover { background: #4338ca; }
+    .copy-btn.copied { background: #10b981; }
+    .examples-section { background: rgba(15, 23, 42, 0.8); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem; }
+    .examples-title { display: flex; align-items: center; gap: 0.5rem; font-size: 1.125rem; font-weight: bold; color: #d1d5db; margin-bottom: 0.75rem; }
+    .examples-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; }
+    @media (max-width: 768px) { .examples-grid { grid-template-columns: repeat(2, 1fr); } }
+    .example-btn { padding: 0.5rem 0.75rem; background: #1f2937; border: 1px solid #374151; border-radius: 0.5rem; text-align: left; cursor: pointer; transition: all 0.2s; }
+    .example-btn:hover { background: #374151; border-color: var(--color-accent-red); }
+    .example-name { font-size: 0.875rem; color: #d1d5db; font-weight: 500; }
+    .example-keywords { font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; }
+    footer { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid rgba(31, 41, 55, 0.5); color: #4b5563; font-size: 0.875rem; }
+    .keyword-display { margin-top: 0.5rem; padding: 0.5rem; background: rgba(0,0,0,0.3); border-radius: 0.5rem; font-size: 0.75rem; color: #a5b4fc; }
+  </style>
+</head>
+<body>
+  <div class="bg-blob"></div>
+  <div class="bg-blob-2"></div>
+  
+  <div class="container">
+    <header>
+      <h1>🖋️ 代码写诗生成器</h1>
+      <p class="subtitle">将你的代码转化为诗意，让程序人生充满墨香</p>
+      <div class="tags">
+        <span class="tag tag-red">16种诗歌风格</span>
+        <span class="tag tag-purple">算法识别</span>
+        <span class="tag tag-indigo">码风分析</span>
+      </div>
+    </header>
+
+    <div class="style-section panel">
+      <div class="section-title">✨ 诗歌风格</div>
+      <div class="style-category">
+        <div class="category-label">古典风格</div>
+        <div class="style-grid" id="classicStyles"></div>
+      </div>
+      <div class="style-category">
+        <div class="category-label">现代风格</div>
+        <div class="style-grid" id="modernStyles"></div>
+      </div>
+      <div class="style-category">
+        <div class="category-label">特色风格</div>
+        <div class="style-grid" id="specialStyles"></div>
+      </div>
+      <div class="style-preview">
+        <div class="style-preview-label">当前风格预览</div>
+        <div class="style-preview-content">
+          <p id="stylePreview">选择一个风格开始创作...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <div class="panel code-panel">
+        <div class="code-header">
+          <span class="code-title">代码输入</span>
+          <span class="char-count" id="charCount">0 字符</span>
+        </div>
+        <div class="code-input-wrapper">
+          <textarea id="codeInput" placeholder="在此粘贴代码..."></textarea>
+          <button class="clear-btn" onclick="clearCode()">清空</button>
+        </div>
+        <div class="keyword-display" id="keywordDisplay">提取的关键字将显示在这里...</div>
+        <button class="generate-btn" id="generateBtn" onclick="generatePoem()">生成诗意 ✨</button>
+      </div>
+
+      <div class="panel poetry-panel">
+        <div id="generatingState" class="generating-state">
+          <div class="generating-icon">🖋️</div>
+          <div class="generating-text">正在挥毫...</div>
+          <div class="loading-dots">
+            <span class="loading-dot"></span>
+            <span class="loading-dot"></span>
+            <span class="loading-dot"></span>
+          </div>
+        </div>
+
+        <div id="emptyState" class="empty-state">
+          <div class="empty-icon">📜</div>
+          <p class="empty-text">左边粘贴代码</p>
+          <p class="empty-hint">点击生成诗意</p>
+        </div>
+
+        <div id="poetryContent" class="poetry-content">
+          <div class="poetry-header">
+            <h3 class="poetry-title" id="poemTitle"></h3>
+            <span class="poetry-style-tag" id="poemStyleTag"></span>
+          </div>
+
+          <div id="algoSection" class="analysis-section" style="display: none;">
+            <div class="analysis-label">🔍 代码解读：</div>
+            <div id="algoTags"></div>
+          </div>
+
+          <div id="styleSection" class="analysis-section" style="display: none;">
+            <div class="analysis-label">🎨 风格分析：</div>
+            <div id="styleTags"></div>
+            <div id="personalityBox" class="personality-box" style="display: none;">
+              <span class="personality-text">👤 编程人格：<strong id="personalityText"></strong></span>
+            </div>
+          </div>
+
+          <div class="poem-display">
+            <div class="poem-bg-1"></div>
+            <div class="poem-bg-2"></div>
+            <div class="poem-lines" id="poemLines"></div>
+            <button class="copy-btn" id="copyBtn" onclick="copyPoem()">复制诗句</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="examples-section">
+      <div class="examples-title">📚 示例代码</div>
+      <div class="examples-grid" id="examplesGrid"></div>
+    </div>
+
+    <footer>
+      <p>代码无情，诗有意 🖋️ | 从诗经到赛博朋克，16种风格任你选择</p>
+    </footer>
+  </div>
+
+  <script>
+    // 诗歌风格配置
+    const poetryStyles = {
+      classic: [
+        { id: 'jueju', name: '七言绝句', preview: '代码行行如流水，轮回众生皆过客...' },
+        { id: 'shijing', name: '诗经', preview: '关关雎鸠，在河之洲。窈窕代码，君子好逑...' },
+        { id: 'chuci', name: '楚辞', preview: '帝代码之苗裔兮，朕先考之正统...' },
+        { id: 'yuefu', name: '乐府', preview: '青青园中葵，朝露待日晞...' },
+        { id: 'wuyan', name: '五言律诗', preview: '空山新雨后，天气晚来秋...' },
+        { id: 'qiyan', name: '七言律诗', preview: '锦瑟无端五十弦，一弦一柱思华年...' },
+        { id: 'ci', name: '宋词', preview: '独立寒秋，湘江北去，橘子洲头...' },
+        { id: 'yuanqu', name: '元曲', preview: '枯藤老树昏鸦，小桥流水人家...' },
+      ],
+      modern: [
+        { id: 'modern', name: '现代诗', preview: '我在轮回里走了很久，以为出口在前方...' },
+        { id: 'menglong', name: '朦胧诗', preview: '黑夜给了我黑色的眼睛，我却用它寻找光明...' },
+        { id: 'yishiliu', name: '意象流', preview: '指针飘过——记忆的水面，涟漪散开...' },
+        { id: 'sanwen', name: '散文诗', preview: '燕子去了，有再来的时候...' },
+        { id: 'minimal', name: '极简诗', preview: '等待。等待。等待。编译完成了吗？没有。' },
+      ],
+      special: [
+        { id: 'zen', name: '禅诗', preview: '看山是山，看代码是代码...' },
+        { id: 'cyberpunk', name: '赛博朋克', preview: '01001001 在霓虹的海洋里，我是一串二进制...' },
+        { id: 'gufengrap', name: '古风说唱', preview: 'Yo Yo Yo 代码行行飘 函数在召唤...' },
+        { id: 'dayou', name: '打油诗', preview: '代码写尽三千行，bug恰似满天星...' },
+        { id: 'haiku', name: '俳句', preview: '古池や 蛙飛び込む 水の音' },
+        { id: 'sonnet', name: '十四行诗', preview: '当我望着你的代码在屏幕上闪烁...' },
+        { id: 'programmer', name: '程序员诗', preview: 'Bug生Bug死Bug生，调试三日头已空...' },
+      ]
+    };
+
+    // 示例代码
+    const examples = [
+      { name: '快速排序', keywords: '递归 函数 循环 抉择', code: `function quickSort(arr) {
+  if (arr.length <= 1) return arr;
+  const pivot = arr[Math.floor(arr.length / 2)];
+  const left = arr.filter(x => x < pivot);
+  const right = arr.filter(x => x > pivot);
+  return [...quickSort(left), pivot, ...quickSort(right)];
+}` },
+      { name: '二分查找', keywords: '函数 循环 抉择', code: `function binarySearch(arr, target) {
+  let left = 0, right = arr.length - 1;
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    if (arr[mid] === target) return mid;
+    if (arr[mid] < target) left = mid + 1;
+    else right = mid - 1;
+  }
+  return -1;
+}` },
+      { name: '动态规划', keywords: '函数 循环 抉择', code: `function fibonacci(n) {
+  const dp = [0, 1];
+  for (let i = 2; i <= n; i++) {
+    dp[i] = dp[i - 1] + dp[i - 2];
+  }
+  return dp[n];
+}` },
+      { name: '广度优先', keywords: '函数 循环 队列', code: `function bfs(graph, start) {
+  const visited = new Set();
+  const queue = [start];
+  while (queue.length > 0) {
+    const node = queue.shift();
+    if (!visited.has(node)) {
+      visited.add(node);
+      queue.push(...graph[node]);
+    }
+  }
+  return visited;
+}` },
+      { name: '深度优先', keywords: '函数 递归 循环', code: `function dfs(graph, node, visited = new Set()) {
+  if (visited.has(node)) return;
+  visited.add(node);
+  for (const neighbor of graph[node]) {
+    dfs(graph, neighbor, visited);
+  }
+  return visited;
+}` },
+      { name: '图论算法', keywords: '函数 循环 抉择', code: `function dijkstra(graph, start) {
+  const dist = {};
+  const pq = new PriorityQueue();
+  pq.enqueue(start, 0);
+  while (!pq.isEmpty()) {
+    const [node, d] = pq.dequeue();
+    if (dist[node]) continue;
+    dist[node] = d;
+    for (const [neighbor, w] of graph[node]) {
+      pq.enqueue(neighbor, d + w);
+    }
+  }
+  return dist;
+}` },
+      { name: '冒泡排序', keywords: '循环 循环 抉择 函数', code: `void bubbleSort(int arr[], int n) {
+  for (int i = 0; i < n-1; i++) {
+    for (int j = 0; j < n-i-1; j++) {
+      if (arr[j] > arr[j+1]) {
+        swap(arr[j], arr[j+1]);
+      }
+    }
+  }
+}` },
+      { name: '归并排序', keywords: '函数 循环 递归', code: `void mergeSort(int arr[], int l, int r) {
+  if (l >= r) return;
+  int m = l + (r - l) / 2;
+  mergeSort(arr, l, m);
+  mergeSort(arr, m + 1, r);
+  merge(arr, l, m, r);
+}` },
+      { name: '递归斐波那契', keywords: '函数 抉择 递归', code: `int fibonacci(int n) {
+  if (n <= 1) return n;
+  return fibonacci(n-1) + fibonacci(n-2);
+}` },
+      { name: 'Hello World', keywords: '函数', code: `cout << "Hello, World!" << endl;` },
+    ];
+
+    // 代码关键字映射
+    const keywordMap = {
+      '循环': ['for', 'while', 'loop', 'iterate', '遍历', 'do'],
+      '抉择': ['if', 'else', 'switch', 'case', '?:', 'elif'],
+      '归去': ['return', '=>', 'goto'],
+      '虚无': ['null', 'nil', 'None', 'undefined', 'void'],
+      '真伪': ['true', 'false', 'True', 'False', '0', '1'],
+      '函数': ['function', 'func', 'def', 'fn', '()'],
+      '定数': ['const', 'let', 'var', 'int', 'string', 'float', 'double'],
+      '试探': ['try', 'catch', 'throw', 'except', 'error'],
+      '无尽': ['while', 'for', 'infinite'],
+      '终焉': ['break', 'exit', 'die', 'halt'],
+      '递归': ['recursive', 'recursion', 'self'],
+      '数组': ['array', '[]', 'Array', 'vector', 'list'],
+      '对象': ['object', 'Object', 'class', '{}'],
+      '指针': ['pointer', '*', 'ref', '&'],
+      '等待': ['await', 'async', 'sleep', 'delay'],
+      '创建': ['new', 'create', 'make', 'alloc'],
+      '删除': ['delete', 'remove', 'destroy', 'drop'],
+      '遍历': ['for', 'each', 'map', 'forEach'],
+      '条件': ['if', 'when', 'unless', 'guard'],
+      '定义': ['define', 'declare', 'struct'],
+      '调用': ['call', 'invoke', 'apply'],
+      '返回': ['return', 'yield', 'back'],
+      '异常': ['exception', 'error', 'throw'],
+      '队列': ['queue', 'Queue', 'shift', 'enqueue', 'dequeue'],
+    };
+
+    // 诗意关键词映射
+    const poetryKeywords = {
+      '循环': ['循环', '轮回', '周而复始', '无尽', '往复', '循环往复', '螺旋'],
+      '抉择': ['抉择', '分岔', '歧路', '十字路口', '若', '若非', '取舍'],
+      '归去': ['归去', '归来', '返璞归真', '归来去兮', '归途', '回还'],
+      '虚无': ['虚无', '空', '寂', '无', '空寂', '四大皆空', '寂寞'],
+      '真伪': ['真伪', '是非', '黑白', '明暗', '阴阳', '分明'],
+      '函数': ['函', '玄机', '妙法', '法门', '道', '机关'],
+      '定数': ['定', '常', '不变', '永恒', '恒', '永固'],
+      '试探': ['试探', '捕获', '追寻', '探索', '寻觅'],
+      '无尽': ['无尽', '无穷', '无限', '天涯', '海角', '浩渺'],
+      '终焉': ['终焉', '终了', '尽头', '彼岸', '寂灭', '终局'],
+      '递归': ['递归', '轮回', '循环', '无尽', '螺旋', '回环'],
+      '数组': ['众', '列', '阵', '云', '海', '万千'],
+      '对象': ['象', '形', '相', '万物', '森罗', '大千'],
+      '指针': ['指', '引', '向', '路', '途', '引路'],
+      '等待': ['待', '候', '等', '守候', '期', '期盼'],
+      '创建': ['生', '造', '化', '诞生', '新生', '创世'],
+      '删除': ['灭', '消', '亡', '逝', '终', '湮灭'],
+      '遍历': ['遍', '历', '游', '巡', '遍历', '周游'],
+      '条件': ['若', '若非', '倘若', '若是', '除非', '假如'],
+      '定义': ['名', '定', '立', '立名', '正名', '命名'],
+      '调用': ['唤', '召', '引', '唤起', '召唤', '召唤'],
+      '返回': ['回', '返', '归', '归去', '归来', '回还'],
+      '异常': ['变', '异', '乱', '错', '无常', '波折'],
+      '队列': ['列', '队', '行', '排', '列阵', '长龙'],
+    };
+
+    // 算法检测模式
+    const algorithmPatterns = {
+      quickSort: { pattern: /quickSort|partition.*pivot|divide.*conquer/i, name: '快速排序', description: '分而治之，选中枢纽递归排序' },
+      mergeSort: { pattern: /mergeSort|merge.*split/i, name: '归并排序', description: '分而治之，先分后合' },
+      binarySearch: { pattern: /binarySearch|binary.*search|mid.*left.*right/i, name: '二分查找', description: '折半查找，高效搜索' },
+      dfs: { pattern: /dfs|depth.*first|recursive.*traversal/i, name: '深度优先', description: '深入探索，一路到底' },
+      bfs: { pattern: /bfs|breadth.*first|queue.*node/i, name: '广度优先', description: '逐层扩展，先近后远' },
+      dijkstra: { pattern: /dijkstra|priority.*queue|shortest.*path/i, name: '最短路径', description: '贪心策略，寻找最短' },
+      dp: { pattern: /dp|dynamic.*programming|memo/i, name: '动态规划', description: '记忆化搜索，子问题求解' },
+      fibonacci: { pattern: /fibonacci|fib/i, name: '斐波那契', description: '递归数列，指数求解' },
+      heapSort: { pattern: /heapSort|heapify|buildMaxHeap/i, name: '堆排序', description: '堆结构排序' },
+      backtrack: { pattern: /backtrack|track.*remove/i, name: '回溯算法', description: '试错搜索，穷举求解' },
+      greedy: { pattern: /greedy|sort.*value.*weight/i, name: '贪心算法', description: '局部最优，追求全局' },
+      bubbleSort: { pattern: /bubbleSort|swap.*adjacent/i, name: '冒泡排序', description: '相邻交换，逐步上浮' },
+    };
+
+    // 代码风格检测
+    const codeStylePatterns = {
+      camelCase: { pattern: /([a-z][A-Z][a-z]+)|^[a-z][a-zA-Z]*$/, name: '驼峰命名', description: '小写开头，词词相连' },
+      snakeCase: { pattern: /^[a-z]+(_[a-z]+)*$/, name: '下划线命名', description: '单词分隔，下划线连' },
+      pascalCase: { pattern: /^[A-Z][a-zA-Z]*$/, name: '帕斯卡命名', description: '大写开头，类名常用' },
+      comments: { pattern: /(\/\/|\/\*|\*\/|#)/, name: '注释风格', description: '代码即文档，注释清晰' },
+      jsDoc: { pattern: /\/\*\*.*\*\//, name: 'JSDoc文档', description: '格式规范，说明详细' },
+    };
+
+    // 诗歌模板
+    const poemTemplates = {
+      jueju: [
+        { name: '代码悟道', lines: ['{keyword1}行行如流水，{keyword2}众生皆过客。', '{keyword3}之处分天地，一{keyword4}了百事了。', '回首向来萧瑟处，{keyword5}也无风雨也无晴。'], keywords: ['循环', '遍历', '抉择', '函数', '归去'] },
+        { name: '函数赋', lines: ['函数深藏玄妙机，{keyword1}如海不可测。', '一入{keyword2}终不悔，归来仍是少年时。'], keywords: ['无尽', '循环'] },
+      ],
+      shijing: [
+        { name: '代码吟', lines: ['关关雎鸠，在河之洲。', '代码如织，逻辑成洲。', '窈窕{keyword1}，君子好求。', '{keyword2}辗转，辗转求休。'], keywords: ['函数', '循环'] },
+        { name: '编程雅', lines: ['桃之夭夭，灼灼其华。', '代码翼翼，灿若朝霞。', '{keyword1}为媒，{keyword2}为车。', '运行千里，不负韶华。'], keywords: ['函数', '定数'] },
+      ],
+      chuci: [
+        { name: '代码怀沙', lines: ['路漫漫其修远兮，吾将上下而求索。', '{keyword1}茫茫其众多兮，吾将debug而不舍。', '代码熠熠其生辉兮，逻辑昭昭其不惑。'], keywords: ['无尽'] },
+        { name: '代码思', lines: ['帝{kw1}之苗裔兮，朕先考之正统。', '乘骐骥以驰骋兮，来吾道夫先路也。'], keywords: ['函数'] },
+      ],
+      yuefu: [
+        { name: '代码行', lines: ['唧唧复唧唧，代码敲不停。', '不知{keyword1}在何处，辗转到天明。', '键盘声声急，屏幕闪闪明。', '一朝debug毕，欢喜笑开颜。'], keywords: ['循环'] },
+        { name: '木兰辞', lines: ['唧唧复唧唧，{keyword1}当户织。', '不闻机杼声，唯闻{keyword2}叹息。'], keywords: ['函数'] },
+      ],
+      wuyan: [
+        { name: '秋夜吟', lines: ['空山新雨后，天气晚来秋。', '程序运行处，明月来相照。', '竹喧归浣女，莲动下渔舟。', '随意春芳歇，代码自可留。'], keywords: [] },
+        { name: '相思', lines: ['红豆生南国，春来发几枝。', '愿君多采撷，此物最相思。'], keywords: [] },
+      ],
+      qiyan: [
+        { name: '锦瑟', lines: ['锦瑟无端五十弦，一弦一柱思华年。', '{keyword1}一行皆是泪，{keyword2}何处无青天。', '此情可待成追忆，只是当时已惘然。'], keywords: ['循环', '抉择'] },
+        { name: '登高', lines: ['风急天高猿啸哀，渚清沙白鸟飞回。', '{keyword1}不尽长江滚滚来，{keyword2}台前草木衰。'], keywords: ['无尽', '抉择'] },
+      ],
+      ci: [
+        { name: '沁园春', lines: ['独立寒秋，湘江北去，橘子洲头。', '看万山红遍，层林尽染；', '代码遍地，{keyword1}无边。', '恰同学少年，风华正茂。'], keywords: ['无尽'] },
+        { name: '青玉案', lines: ['东风夜放花千树，更吹落、星如雨。', '蓦然回首，那人却在，灯火阑珊处。'], keywords: [] },
+      ],
+      yuanqu: [
+        { name: '天净沙', lines: ['枯藤老树昏鸦，小桥流水人家。', '代码西风瘦马，夕阳西下，', '{keyword1}在天涯。'], keywords: ['归去'] },
+        { name: '山坡羊', lines: ['峰峦如聚，波涛如怒。', '代码路，任辛苦。'], keywords: [] },
+      ],
+      modern: [
+        { name: '程序员独白', lines: ['我在{keyword1}里走了很久，以为出口在前方。', '直到{keyword2}那一刻，才发现所有路都是归途。'], keywords: ['循环', '归去'] },
+        { name: '代码的河', lines: ['{keyword1}的河在逻辑的山谷间流淌', '每一行代码都是奔向大海的波浪', '{keyword2}是礁石，让水流更加激荡'], keywords: ['无尽', '抉择'] },
+      ],
+      menglong: [
+        { name: '黑色的眼睛', lines: ['黑夜给了我黑色的眼睛', '我却用它寻找', '光明的{keyword1}'], keywords: ['归去'] },
+        { name: '一代人', lines: ['黑夜给了我黑色的眼睛', '我却用它寻找光明'], keywords: [] },
+      ],
+      yishiliu: [
+        { name: '飘', lines: ['{keyword1}飘过', '——', '记忆的水面', '涟漪散开', '{keyword2}流淌'], keywords: ['指针', '数组'] },
+        { name: '漂泊', lines: ['我是天空的一片云', '偶尔投影在你的波心'], keywords: [] },
+      ],
+      sanwen: [
+        { name: '匆匆', lines: ['代码匆匆地走了，正如它匆匆地来。', '它挥一挥鼠标，不带走一片bug。'], keywords: [] },
+        { name: '春', lines: ['盼望着，盼望着，东风来了，春天的脚步近了。'], keywords: [] },
+      ],
+      minimal: [
+        { name: '等待', lines: ['等待。等待。等待。', '{keyword1}完成了吗？没有。'], keywords: ['等待'] },
+        { name: '寂静', lines: ['。'], keywords: [] },
+      ],
+      zen: [
+        { name: '代码即空', lines: ['看山是山，看代码是代码。', '{keyword1}不是{kw1}，是你的执念。', '{keyword2}不是结束，是放下。', '{keyword3}不是空，是本来面目。'], keywords: ['循环', '归去', '虚无'] },
+        { name: '平常心', lines: ['平常心是道，无分别故。', '{keyword1}本无物，何处惹尘埃？'], keywords: ['虚无'] },
+      ],
+      cyberpunk: [
+        { name: '01001', lines: ['01001001 在霓虹的海洋里', '我是一串{kw1}', '在光纤中穿梭', '在芯片上刻下我的名字'], keywords: ['函数'] },
+        { name: '矩阵', lines: ['矩阵中行走', '0和1是我的双足'], keywords: [] },
+      ],
+      gufengrap: [
+        { name: '代码Yo', lines: ['Yo Yo Yo {keyword1}行行飘', '{keyword2}在召唤 {keyword3}在骚扰', '这就是我的代码 准备好尖叫'], keywords: ['函数', '循环', '抉择'] },
+        { name: '说唱', lines: ['Yo! 代码在飞，键盘在嗨'], keywords: [] },
+      ],
+      dayou: [
+        { name: '自嘲', lines: ['代码写尽三千行，{keyword1}恰似满天星。', '夜来风雨声，花落知多少。'], keywords: ['循环'] },
+        { name: '打油', lines: ['代码一行行，bug一行行。', '举头望屏幕，低头思故乡。'], keywords: [] },
+      ],
+      haiku: [
+        { name: '古池', lines: ['古池や', '蛙飛び込む', '水の音'], keywords: [] },
+        { name: '夏目', lines: ['蝉鸣く', '如くこと', '计算机'], keywords: [] },
+      ],
+      sonnet: [
+        { name: '十四行诗', lines: ['当我望着你的代码在屏幕上闪烁', '如同夜空中最璀璨的星辰', '我的心灵为之震颤'], keywords: [] },
+        { name: '夜莺', lines: ['美只是一种感觉，而这种感觉在代码中找到了形式'], keywords: [] },
+      ],
+      programmer: [
+        { name: 'Bug平生', lines: ['{keyword1}生{kw1}死{kw2}生，', '调试三日头已空。', '若问代码何处去，', 'Git提交尘土中。'], keywords: ['循环', '循环', '无尽'] },
+        { name: '循环吟', lines: ['{keyword1}无尽几时休？', '{keyword2}不知春秋。', '{keyword3}里头白发生，', '一{kw1}方休。'], keywords: ['无尽', '循环', '循环'] },
+        { name: '虚无颂', lines: ['{keyword1}本无物，', '何处惹尘埃？', '{keyword2}是{kw1}，', '{keyword3}是本来。'], keywords: ['虚无', '函数', '归去'] },
+        { name: '条件赋', lines: ['如果{if}能重来', '我会不会选择{else}？', '可惜人生不是代码，', '没有{try}和{catch}。'], keywords: [] },
+      ],
+    };
+
+    // 算法专属诗歌
+    const algorithmPoetry = {
+      quickSort: [
+        { name: '分治', lines: ['一分为二，二分为四', '{keyword1}如枢纽定乾坤', '递归深处是归途', '万类霜天竞自华'], keywords: ['抉择'] },
+        { name: '枢纽', lines: ['中枢一定，乾坤转', '左右分列，各有归', '递归调用无穷已', '排序完成万类齐'], keywords: ['递归', '循环'] },
+      ],
+      binarySearch: [
+        { name: '折半', lines: ['折半方知路不迷', '左右之间见真机', '一点灵犀通表里', '豁然开朗在此时'], keywords: ['抉择'] },
+      ],
+      dfs: [
+        { name: '深入', lines: ['深入{keyword1}不思返', '一条路走到黑', '蓦然回首', '答案在灯火阑珊处'], keywords: ['递归', '循环'] },
+      ],
+      bfs: [
+        { name: '广度', lines: ['层层递进如波浪', '队列排开向四方', '遍历众生皆有序', '一网打尽世无双'], keywords: ['队列', '循环'] },
+      ],
+      dp: [
+        { name: '记忆', lines: ['前尘往事记犹新', '步步为营见匠心', '积少成多终至远', '算来皆是有心人'], keywords: ['数组', '循环'] },
+      ],
+      fibonacci: [
+        { name: '数列', lines: ['一生二，二生三', '三生万物如循环', '递归深处无穷已', '指数爆炸天地宽'], keywords: ['递归', '抉择'] },
+      ],
+    };
+
+    // 编程人格
+    const personalities = [
+      '完美主义者', '效率大师', '问题终结者', '逻辑狂人',
+      '代码诗人', '架构设计师', 'Bug猎手', '性能优化师',
+      '递归信徒', '循环行者', '函数主义者', '数据守望者'
+    ];
+
+    // 状态
+    let currentStyle = 'jueju';
+    let currentPoem = null;
+    let recentTemplates = [];
+    const MAX_RECENT = 10;
+    const TEMPLATE_COOLDOWN = 30000;
+
+    // 初始化风格选择器
+    function initStyles() {
+      const classicContainer = document.getElementById('classicStyles');
+      const modernContainer = document.getElementById('modernStyles');
+      const specialContainer = document.getElementById('specialStyles');
+
+      poetryStyles.classic.forEach(style => classicContainer.appendChild(createStyleBtn(style)));
+      poetryStyles.modern.forEach(style => modernContainer.appendChild(createStyleBtn(style)));
+      poetryStyles.special.forEach(style => specialContainer.appendChild(createStyleBtn(style)));
+    }
+
+    function createStyleBtn(style) {
+      const btn = document.createElement('button');
+      btn.className = 'style-btn' + (style.id === currentStyle ? ' active' : '');
+      btn.textContent = style.name;
+      btn.onclick = () => selectStyle(style.id);
+      return btn;
+    }
+
+    function selectStyle(styleId) {
+      currentStyle = styleId;
+      document.querySelectorAll('.style-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`[onclick="selectStyle('${styleId}')"]`).classList.add('active');
+      const allStyles = [...poetryStyles.classic, ...poetryStyles.modern, ...poetryStyles.special];
+      const style = allStyles.find(s => s.id === styleId);
+      document.getElementById('stylePreview').textContent = style ? style.preview : '';
+    }
+
+    // 初始化示例代码
+    function initExamples() {
+      const grid = document.getElementById('examplesGrid');
+      examples.forEach(example => {
+        const btn = document.createElement('button');
+        btn.className = 'example-btn';
+        btn.innerHTML = `<div class="example-name">${example.name}</div><div class="example-keywords">${example.keywords}</div>`;
+        btn.onclick = () => loadExample(example.code);
+        grid.appendChild(btn);
+      });
+    }
+
+    function loadExample(code) {
+      document.getElementById('codeInput').value = code;
+      updateCharCount();
+      resetPoetry();
+      updateKeywordDisplay(code);
+    }
+
+    function clearCode() {
+      document.getElementById('codeInput').value = '';
+      updateCharCount();
+      resetPoetry();
+      document.getElementById('keywordDisplay').textContent = '提取的关键字将显示在这里...';
+    }
+
+    function updateCharCount() {
+      const count = document.getElementById('codeInput').value.length;
+      document.getElementById('charCount').textContent = count + ' 字符';
+      document.getElementById('generateBtn').disabled = count === 0;
+    }
+
+    function resetPoetry() {
+      document.getElementById('generatingState').classList.remove('visible');
+      document.getElementById('emptyState').classList.remove('hidden');
+      document.getElementById('poetryContent').classList.remove('visible');
+    }
+
+    // 提取关键字
+    function extractKeywords(code) {
+      const foundKeywords = new Set();
+      for (const [poetryKeyword, codePatterns] of Object.entries(keywordMap)) {
+        for (const pattern of codePatterns) {
+          if (code.includes(pattern)) {
+            foundKeywords.add(poetryKeyword);
+            break;
+          }
+        }
+      }
+      return Array.from(foundKeywords);
+    }
+
+    // 获取诗意关键词
+    function getRandomPoetryKeyword(baseKeyword) {
+      const keywords = poetryKeywords[baseKeyword];
+      if (!keywords || keywords.length === 0) return baseKeyword;
+      return keywords[Math.floor(Math.random() * keywords.length)];
+    }
+
+    // 更新关键字显示
+    function updateKeywordDisplay(code) {
+      const keywords = extractKeywords(code);
+      const display = document.getElementById('keywordDisplay');
+      if (keywords.length > 0) {
+        const poeticKeywords = keywords.map(k => getRandomPoetryKeyword(k));
+        display.textContent = '提取关键字：' + poeticKeywords.join('、');
+      } else {
+        display.textContent = '未检测到关键字';
+      }
+    }
+
+    // 检测算法
+    function detectAlgorithms(code) {
+      const detected = [];
+      for (const [name, algo] of Object.entries(algorithmPatterns)) {
+        if (algo.pattern.test(code)) {
+          detected.push(algo.name);
+        }
+      }
+      return detected;
+    }
+
+    // 检测代码风格
+    function detectCodeStyles(code) {
+      const detected = [];
+      for (const [name, style] of Object.entries(codeStylePatterns)) {
+        if (style.pattern.test(code)) {
+          detected.push(style.name);
+        }
+      }
+      return detected;
+    }
+
+    // 获取编程人格
+    function getPersonality() {
+      return personalities[Math.floor(Math.random() * personalities.length)];
+    }
+
+    // 替换占位符
+    function replacePlaceholders(line, keywords, kw1, kw2) {
+      let result = line
+        .replace(/{keyword1}/g, keywords[0] || '循环')
+        .replace(/{keyword2}/g, keywords[1] || keywords[0] || '抉择')
+        .replace(/{keyword3}/g, keywords[2] || keywords[0] || '无尽')
+        .replace(/{keyword4}/g, keywords[3] || keywords[0] || '函数')
+        .replace(/{keyword5}/g, keywords[4] || keywords[0] || '归去')
+        .replace(/{kw1}/g, kw1)
+        .replace(/{kw2}/g, kw2)
+        .replace(/{fkeyword}/g, '函数')
+        .replace(/{if}/g, 'if')
+        .replace(/{else}/g, 'else')
+        .replace(/{try}/g, 'try')
+        .replace(/{catch}/g, 'catch');
+      return result;
+    }
+
+    // 检查模板是否最近使用
+    function isRecentlyUsed(key) {
+      const now = Date.now();
+      return recentTemplates.some(item => item.key === key && (now - item.timestamp) < TEMPLATE_COOLDOWN);
+    }
+
+    // 标记模板已使用
+    function markTemplateUsed(key) {
+      const now = Date.now();
+      recentTemplates.push({ key, timestamp: now });
+      while (recentTemplates.length > MAX_RECENT) recentTemplates.shift();
+      recentTemplates = recentTemplates.filter(item => now - item.timestamp < TEMPLATE_COOLDOWN);
+    }
+
+    // 生成诗歌
+    function generatePoem() {
+      const code = document.getElementById('codeInput').value.trim();
+      if (!code) return;
+
+      document.getElementById('emptyState').classList.add('hidden');
+      document.getElementById('generatingState').classList.add('visible');
+      document.getElementById('poetryContent').classList.remove('visible');
+
+      setTimeout(() => {
+        document.getElementById('generatingState').classList.remove('visible');
+        document.getElementById('poetryContent').classList.add('visible');
+
+        const keywords = extractKeywords(code);
+        const algorithms = detectAlgorithms(code);
+        const codeStyles = detectCodeStyles(code);
+        const personality = getPersonality();
+
+        // 转换为诗意关键词
+        const poeticKeywords = keywords.map(k => getRandomPoetryKeyword(k));
+        const kw1 = poeticKeywords[Math.floor(Math.random() * poeticKeywords.length)] || '循环';
+        const kw2 = poeticKeywords[Math.floor(Math.random() * poeticKeywords.length)] || '抉择';
+
+        // 优先使用算法专属诗歌
+        let template = null;
+        let title = '';
+        
+        if (algorithms.length > 0) {
+          const primaryAlgo = algorithms[0].toLowerCase().replace(/\s+/g, '');
+          if (algorithmPoetry[primaryAlgo]) {
+            const algoTemplates = algorithmPoetry[primaryAlgo];
+            const available = algoTemplates.filter(t => !isRecentlyUsed('algo_' + primaryAlgo + '_' + t.name));
+            if (available.length > 0) {
+              template = available[Math.floor(Math.random() * available.length)];
+              markTemplateUsed('algo_' + primaryAlgo + '_' + template.name);
+            }
+          }
+        }
+
+        // 使用当前风格的模板
+        if (!template) {
+          const styleTemplates = poemTemplates[currentStyle] || poemTemplates.jueju;
+          const available = styleTemplates.filter(t => !isRecentlyUsed(currentStyle + '_' + t.name));
+          if (available.length > 0) {
+            template = available[Math.floor(Math.random() * available.length)];
+            markTemplateUsed(currentStyle + '_' + template.name);
+          } else {
+            // 随机选择
+            template = styleTemplates[Math.floor(Math.random() * styleTemplates.length)];
+            markTemplateUsed(currentStyle + '_' + template.name);
+          }
+        }
+
+        // 替换占位符生成诗歌
+        const templateKeywords = template.keywords && template.keywords.length > 0 
+          ? template.keywords.map(k => getRandomPoetryKeyword(k))
+          : poeticKeywords;
+        
+        const content = template.lines.map(line => 
+          replacePlaceholders(line, templateKeywords, kw1, kw2)
+        );
+
+        currentPoem = { title: template.name, content };
+
+        // 更新UI
+        document.getElementById('poemTitle').textContent = template.name;
+        document.getElementById('poemStyleTag').textContent = getStyleName(currentStyle);
+
+        if (algorithms.length > 0) {
+          document.getElementById('algoSection').style.display = 'block';
+          document.getElementById('algoTags').innerHTML = algorithms.map(a => `<span class="tag-pill tag-algo">${a}</span>`).join('');
+        } else {
+          document.getElementById('algoSection').style.display = 'none';
+        }
+
+        if (codeStyles.length > 0) {
+          document.getElementById('styleSection').style.display = 'block';
+          document.getElementById('styleTags').innerHTML = codeStyles.map(s => `<span class="tag-pill tag-style">${s}</span>`).join('');
+          document.getElementById('personalityBox').style.display = 'block';
+          document.getElementById('personalityText').textContent = personality;
+        } else {
+          document.getElementById('styleSection').style.display = 'none';
+        }
+
+        // 显示诗歌（逐行动画）
+        const linesContainer = document.getElementById('poemLines');
+        linesContainer.innerHTML = content.map(line => `<p class="poem-line">${line}</p>`).join('');
+
+        const lines = linesContainer.querySelectorAll('.poem-line');
+        lines.forEach((line, index) => {
+          setTimeout(() => {
+            line.classList.add('visible');
+          }, index * 400);
+        });
+
+      }, 1500);
+    }
+
+    function getStyleName(styleId) {
+      const allStyles = [...poetryStyles.classic, ...poetryStyles.modern, ...poetryStyles.special];
+      const style = allStyles.find(s => s.id === styleId);
+      return style ? style.name : '诗';
+    }
+
+    function copyPoem() {
+      if (!currentPoem) return;
+      const text = currentPoem.content.join('\n');
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = '已复制!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = '复制诗句';
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
+
+    // 事件监听
+    document.getElementById('codeInput').addEventListener('input', function() {
+      updateCharCount();
+      updateKeywordDisplay(this.value);
+    });
+
+    // 初始化
+    initStyles();
+    initExamples();
+    updateCharCount();
+  </script>
+</body>
+</html>
