@@ -404,20 +404,47 @@
       '读取': ['读取', '提取', '查看', '阅览', '审阅', '阅取', '读阅', '取读'],
     };
 
-    // 算法检测模式
+    // 算法检测模式 - 30+种算法
     const algorithmPatterns = {
-      quickSort: { pattern: /quickSort|partition.*pivot|divide.*conquer/i, name: '快速排序', description: '分而治之，选中枢纽递归排序' },
-      mergeSort: { pattern: /mergeSort|merge.*split/i, name: '归并排序', description: '分而治之，先分后合' },
-      binarySearch: { pattern: /binarySearch|binary.*search|mid.*left.*right/i, name: '二分查找', description: '折半查找，高效搜索' },
-      dfs: { pattern: /dfs|depth.*first|recursive.*traversal/i, name: '深度优先', description: '深入探索，一路到底' },
-      bfs: { pattern: /bfs|breadth.*first|queue.*node/i, name: '广度优先', description: '逐层扩展，先近后远' },
-      dijkstra: { pattern: /dijkstra|priority.*queue|shortest.*path/i, name: '最短路径', description: '贪心策略，寻找最短' },
-      dp: { pattern: /dp|dynamic.*programming|memo/i, name: '动态规划', description: '记忆化搜索，子问题求解' },
-      fibonacci: { pattern: /fibonacci|fib/i, name: '斐波那契', description: '递归数列，指数求解' },
-      heapSort: { pattern: /heapSort|heapify|buildMaxHeap/i, name: '堆排序', description: '堆结构排序' },
-      backtrack: { pattern: /backtrack|track.*remove/i, name: '回溯算法', description: '试错搜索，穷举求解' },
-      greedy: { pattern: /greedy|sort.*value.*weight/i, name: '贪心算法', description: '局部最优，追求全局' },
-      bubbleSort: { pattern: /bubbleSort|swap.*adjacent/i, name: '冒泡排序', description: '相邻交换，逐步上浮' },
+      quickSort: { pattern: /quickSort|partition.*pivot|divide.*conquer|快排/i, name: '快速排序', description: '分而治之，选中枢纽递归排序' },
+      mergeSort: { pattern: /mergeSort|merge.*split|归并排序/i, name: '归并排序', description: '分而治之，先分后合' },
+      binarySearch: { pattern: /binarySearch|binary.*search|mid.*left.*right|二分查找/i, name: '二分查找', description: '折半查找，高效搜索' },
+      dfs: { pattern: /dfs|depth.*first|recursive.*traversal|深度优先/i, name: '深度优先', description: '深入探索，一路到底' },
+      bfs: { pattern: /bfs|breadth.*first|queue.*node|广度优先/i, name: '广度优先', description: '逐层扩展，先近后远' },
+      dijkstra: { pattern: /dijkstra|priority.*queue|shortest.*path|最短路径/i, name: '最短路径', description: '贪心策略，寻找最短' },
+      dp: { pattern: /dp|dynamic.*programming|memo|动态规划|记忆化/i, name: '动态规划', description: '记忆化搜索，子问题求解' },
+      fibonacci: { pattern: /fibonacci|fib|斐波那契/i, name: '斐波那契', description: '递归数列，指数求解' },
+      heapSort: { pattern: /heapSort|heapify|buildMaxHeap|堆排序/i, name: '堆排序', description: '堆结构排序' },
+      backtrack: { pattern: /backtrack|track.*remove|回溯算法/i, name: '回溯算法', description: '试错搜索，穷举求解' },
+      greedy: { pattern: /greedy|sort.*value.*weight|贪心算法/i, name: '贪心算法', description: '局部最优，追求全局' },
+      bubbleSort: { pattern: /bubbleSort|swap.*adjacent|冒泡排序/i, name: '冒泡排序', description: '相邻交换，逐步上浮' },
+      insertionSort: { pattern: /insertionSort|insert.*sort|插入排序/i, name: '插入排序', description: '逐一插入，有序扩展' },
+      selectionSort: { pattern: /selectionSort|select.*min|选择排序/i, name: '选择排序', description: '每次选取最小元素' },
+      shellSort: { pattern: /shellSort|gap.*increment|希尔排序/i, name: '希尔排序', description: '间隔排序，逐步缩小' },
+      countingSort: { pattern: /countingSort|count.*array|计数排序/i, name: '计数排序', description: '计数统计，线性排序' },
+      radixSort: { pattern: /radixSort|digit.*sort|基数排序/i, name: '基数排序', description: '按位排序，多轮遍历' },
+      linearSearch: { pattern: /linearSearch|linear.*search|顺序查找/i, name: '线性查找', description: '逐个遍历，顺序查找' },
+      redBlackTree: { pattern: /redBlack|rbTree|红黑树|rotate.*color/i, name: '红黑树', description: '自平衡二叉搜索树' },
+      avlTree: { pattern: /avl|balance.*factor|AVL树/i, name: 'AVL树', description: '严格平衡二叉搜索树' },
+      segmentTree: { pattern: /segmentTree|segment.*tree|线段树/i, name: '线段树', description: '区间查询，树状结构' },
+      fenwickTree: { pattern: /fenwick|bitTree|lowbit|树状数组/i, name: '树状数组', description: '前缀和查询，树状结构' },
+      unionFind: { pattern: /unionFind|find.*union|并查集|disjoint.*set/i, name: '并查集', description: '集合合并，路径压缩' },
+      kruskal: { pattern: /kruskal|minimum.*spanning|最小生成树/i, name: '最小生成树', description: '贪心选边，构建最小树' },
+      prim: { pattern: /prim|mst|最小生成树/i, name: '最小生成树', description: '逐点扩展，构建最小树' },
+      topologicalSort: { pattern: /topological|indegree|拓扑排序/i, name: '拓扑排序', description: '有向无环图排序' },
+      tarjan: { pattern: /tarjan|strongly.*connected|强连通分量/i, name: '强连通分量', description: '深度搜索，寻找强连通' },
+      kmp: { pattern: /kmp|lps.*array|前缀函数|字符串匹配/i, name: 'KMP匹配', description: '前缀函数，高效匹配' },
+      trie: { pattern: /trie|prefix.*tree|字典树/i, name: '字典树', description: '前缀树，高效检索' },
+      lcs: { pattern: /lcs|longest.*common.*subsequence|最长公共子序列/i, name: '最长公共子序列', description: '动态规划，子序列匹配' },
+      lis: { pattern: /lis|longest.*increasing|最长递增子序列/i, name: '最长递增子序列', description: '贪心二分，子序列优化' },
+      knapsack: { pattern: /knapsack|背包|weight.*value/i, name: '背包问题', description: '动态规划，容量优化' },
+      editDistance: { pattern: /editDistance|levenshtein|编辑距离/i, name: '编辑距离', description: '字符串变换，动态规划' },
+      slidingWindow: { pattern: /slidingWindow|window.*start.*end|滑动窗口/i, name: '滑动窗口', description: '双指针移动，区间优化' },
+      twoPointers: { pattern: /twoPointers|left.*right.*pointer|双指针/i, name: '双指针', description: '两端逼近，相向而行' },
+      monotonicStack: { pattern: /monotonicStack|nextGreater|单调栈/i, name: '单调栈', description: '单调递增，维护极值' },
+      monotonicQueue: { pattern: /monotonicQueue|deque.*max|单调队列/i, name: '单调队列', description: '滑动窗口最值维护' },
+      bitManipulation: { pattern: /bit.*manip|xor|and|or|shift|位运算/i, name: '位运算', description: '二进制操作，巧妙优化' },
+      rollingHash: { pattern: /rollingHash|rabin.*karp|字符串哈希/i, name: '字符串哈希', description: '哈希编码，快速比较' },
     };
 
     // 代码风格检测
@@ -561,6 +588,81 @@
       ],
       mergeSort: [
         { name: '归并吟', lines: ['分而治之见真章', '{k}合并更坚强', '{k}深处无穷已', '排序功成日月长'], keywords: ['轮回', '轮回'] },
+      ],
+      insertionSort: [
+        { name: '插入吟', lines: ['逐一插入有序列', '{k}往复渐成篇', '小到大道步步稳', '排序功成见真诠'], keywords: ['轮回'] },
+      ],
+      selectionSort: [
+        { name: '选择吟', lines: ['千中选一最分明', '{k}往复逐层清', '最小归位秩序定', '排序功成见太平'], keywords: ['轮回'] },
+      ],
+      shellSort: [
+        { name: '希尔吟', lines: ['间隔排序步步近', '{k}往复渐分明', '鸿沟渐缩终成序', '排序功成指日程'], keywords: ['轮回'] },
+      ],
+      countingSort: [
+        { name: '计数吟', lines: ['计数统计见分明', '{k}累积秩序成', '线性遍历无比较', '排序功成似风行'], keywords: ['轮回'] },
+      ],
+      radixSort: [
+        { name: '基数吟', lines: ['按位排序层层清', '{k}往复见分明', '个十百千终有序', '排序功成似天成'], keywords: ['轮回'] },
+      ],
+      linearSearch: [
+        { name: '线性吟', lines: ['逐个遍历寻踪迹', '{k}往复不迟疑', '虽慢却稳终得见', '查找功成在此时'], keywords: ['轮回'] },
+      ],
+      redBlackTree: [
+        { name: '红黑吟', lines: ['红黑相间自平衡', '{k}轮转见分明', '旋转着色保秩序', '树成千古任纵横'], keywords: ['轮回'] },
+      ],
+      avlTree: [
+        { name: 'AVL吟', lines: ['严格平衡见真章', '{k}轮转保四方', '因子调控秩序定', '树成高耸入云苍'], keywords: ['轮回'] },
+      ],
+      segmentTree: [
+        { name: '线段吟', lines: ['区间查询树中藏', '{k}递归见分明', '分治合并知天下', '树成万象任翱翔'], keywords: ['轮回'] },
+      ],
+      fenwickTree: [
+        { name: '树状吟', lines: ['前缀和查树状藏', '{k}lowbit见分明', '加减更新瞬息间', '数组功成似龙翔'], keywords: ['轮回'] },
+      ],
+      unionFind: [
+        { name: '并查吟', lines: ['集合合并路径压', '{k}寻根见分岔', '同族归一乾坤定', '并查功成统万家'], keywords: ['轮回'] },
+      ],
+      kruskal: [
+        { name: '最小树', lines: ['贪心选边见真章', '{k}取舍秩序长', '最小生成通四海', '树成万古颂八方'], keywords: ['决断'] },
+      ],
+      topologicalSort: [
+        { name: '拓扑吟', lines: ['有向无环秩序成', '{k}入度见分明', '层层剥离终有序', '排序功成指日程'], keywords: ['轮回'] },
+      ],
+      kmp: [
+        { name: 'KMP吟', lines: ['前缀函数见玄机', '{k}匹配不相欺', '跳过重复终得见', '查找功成似电疾'], keywords: ['轮回'] },
+      ],
+      trie: [
+        { name: '字典吟', lines: ['前缀树中藏万象', '{k}分支见分明', '一字千词皆可寻', '检索功成似龙行'], keywords: ['分岔'] },
+      ],
+      lcs: [
+        { name: '子序列', lines: ['最长公共藏表中', '{k}动态见分明', '一字一码皆计较', '匹配功成似天成'], keywords: ['轮回'] },
+      ],
+      lis: [
+        { name: '递增吟', lines: ['最长递增二分寻', '{k}贪心见分明', '替换维护终有序', '序列功成似龙吟'], keywords: ['轮回'] },
+      ],
+      knapsack: [
+        { name: '背包吟', lines: ['容量有限智慧生', '{k}取舍见分明', '动态规划最优解', '背包功成指日程'], keywords: ['决断'] },
+      ],
+      editDistance: [
+        { name: '编辑吟', lines: ['增删替换见真章', '{k}动态算分明', '一字之差千里远', '距离功成似电光'], keywords: ['轮回'] },
+      ],
+      slidingWindow: [
+        { name: '窗口吟', lines: ['滑动窗口区间明', '{k}移动见分灵', '左右收缩终得解', '优化功成似风行'], keywords: ['轮回'] },
+      ],
+      twoPointers: [
+        { name: '双指针', lines: ['两端逼近相向行', '{k}取舍见分明', '快慢高低终相遇', '指针功成指日程'], keywords: ['决断'] },
+      ],
+      monotonicStack: [
+        { name: '单调栈', lines: ['单调递增极值藏', '{k}出入见分明', '下一个大此中寻', '栈成万古颂龙行'], keywords: ['轮回'] },
+      ],
+      monotonicQueue: [
+        { name: '单调队', lines: ['滑动窗口最值寻', '{k}出入见分明', '队首队尾皆有序', '队列功成似龙吟'], keywords: ['轮回'] },
+      ],
+      bitManipulation: [
+        { name: '位运算', lines: ['二进制中藏玄机', '{k}异或见分明', '与或非移皆妙算', '运算功成似电疾'], keywords: ['轮回'] },
+      ],
+      rollingHash: [
+        { name: '哈希吟', lines: ['滚动哈希编码成', '{k}比较见分明', '字符串中寻相似', '哈希功成似天成'], keywords: ['轮回'] },
       ],
     };
 
